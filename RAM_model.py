@@ -29,7 +29,7 @@ def glimpseSensor(img, normLoc):
     img = tf.reshape(img, (batch_size, width, height, channels))
     zooms = []
 
-    max_radius = minRadius * (2 ** (depth - 1)) #2 * (2 ** (3-1)) = 8
+    max_radius = minRadius * (2 ** (depth - 1)) 
     
     # process each image individually
     for k in xrange(batch_size):
@@ -40,10 +40,10 @@ def glimpseSensor(img, normLoc):
         one_img = tf.image.pad_to_bounding_box(one_img, max_radius, max_radius, \
             max_radius * 4 + width, max_radius * 4 + height)
         
-        for i in xrange(depth): # i = 0
-            r = int(minRadius * (2 ** (i))) #r = 2
+        for i in xrange(depth): 
+            r = int(minRadius * (2 ** (i))) 
 
-            d_raw = 2 * r   #4
+            d_raw = 2 * r 
             d = tf.constant(d_raw, shape=[1])
             d = tf.tile(d, [2])
             d = tf.concat(0, [d, tf.constant(channels, shape=[1])])
@@ -94,8 +94,8 @@ def lable_pred(output):
     pred = tf.arg_max(pred_tensor, 1)
     return pred_tensor, pred
 
-def baselineFunc():
-    with tf.variable_scope("baseline", reuse = DO_SHARE):
+def baselineFunc(scope):
+    with tf.variable_scope(scope, reuse = DO_SHARE):
         return b + 1
 
 # to use for maximum likelihood with glimpse location
@@ -120,7 +120,7 @@ def calc_reward(pred_tensor, pred, labels, tensor_labels, p_loc, baseline):
 
 
 mean_locs, sampled_locs = [0] * total_step, [0] * total_step
-pred_tensors, preds = [0] * max_length, [0] * max_length
+pred_tensors, preds, baselines = [0] * max_length, [0] * max_length, [0] * max_length
 # initial state
 lstm_state = lstm_cell.zero_state(batch_size, tf.float32)
 # build the graph
@@ -138,25 +138,28 @@ for t in range(total_step):
         if (t + 1) == glimpses:
             DO_SHARE = False
         pred_tensors[(t+1) / glimpses - 1], preds[(t+1) / glimpses - 1] = lable_pred(output)  # batch_size * 1
+        baselines[(t+1) / glimpses - 1] = baselineFunc("baseline"+str((t+1) / glimpses - 1))
     DO_SHARE = True
 
-baseline = baselineFunc()
-
-sampled_locs = tf.concat(0, sampled_locs)
-sampled_locs = tf.reshape(sampled_locs, (batch_size, total_step, 2))
-mean_locs = tf.concat(0, mean_locs)
-mean_locs = tf.reshape(mean_locs, (batch_size, total_step, 2))
-
-p_loc = gaussian_pdf(mean_locs, sampled_locs) #batch_size * total_step * 2
-p_loc = tf.reshape(p_loc, (batch_size, total_step * 2))
+output_pred = tf.concat(0, preds)
+output_pred = tf.reshape(output_pred, (batch_size, max_length))
 
 cost = 0.
 reward = 0.
 for i in range(max_length):
+
+    loc = tf.concat(0, sampled_locs[i*glimpses, (i+1)*glimpses])
+    loc = tf.reshape(loc, (batch_size, glimpses, 2))
+    m_loc = tf.concat(0, mean_locs[i*glimpses, (i+1)*glimpses])
+    m_loc = tf.reshape(m_loc, (batch_size, glimpses, 2))
+
+    p_loc = gaussian_pdf(m_loc, loc) #batch_size * total_step * 2
+    p_loc = tf.reshape(p_loc, (batch_size, glimpses * 2))
+
     cost_, reward_ = calc_reward(pred_tensors[i], preds[i], 
                                  labels[:,i], tensor_labels[:,i, :], \
-                                 p_loc[:, i * glimpses : (i+1)*glimpses], \
-                                 baseline)
+                                 p_loc, \
+                                 baselines[i])
     cost += cost_
     reward += reward_
 

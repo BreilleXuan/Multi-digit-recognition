@@ -22,11 +22,11 @@ cell_size = 256
 cell_out_size = cell_size
 
 max_length = 5
-glimpses = 3
+glimpses = 5
 total_step = max_length * glimpses
 n_classes = 10
 
-lr = 1e-4
+lr = 1e-3
 max_iters = 1000000
 
 width = 160

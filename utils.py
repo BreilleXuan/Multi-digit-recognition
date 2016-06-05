@@ -33,7 +33,7 @@ def read_img(img_name, img_path):
 	return img_tensor.reshape(n, w*h*c), mean, std
 
 def split_label(label_str):
-	label = np.ones(max_length) * (11)
+	label = np.ones(max_length) * (10)
 	for i in range(len(label_str)):
 		label[i] = int(label_str[i])
 	return label
@@ -52,7 +52,7 @@ def genr_label(label_file):
 	rd = read(label_file)
 	n = len(rd)
 
-	labels = np.zeros((n, max_length)) * (-1)
+	labels = np.zeros((n, max_length))
 	tensor_labels = np.zeros((n, max_length, n_classes + 1))
 
 	for i,label in enumerate(rd):
@@ -64,6 +64,7 @@ def genr_label(label_file):
 if __name__ == '__main__':
 	img_tensor, mean, std = read_img("img_name_list.txt", "img/")
 	labels, tensor_labels = genr_label("labels.txt")
+	print(labels[:,1])
 
 	ind = [1,2]
 	print(img_tensor[ind])
