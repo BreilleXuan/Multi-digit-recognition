@@ -90,8 +90,9 @@ def lable_pred(output):
     with tf.variable_scope("pred", reuse = DO_SHARE):
         pred_tensor = linear(output, n_classes + 1)
 
-    pred_tensor = tf.nn.softmax(pred_tensor)
-    pred = tf.arg_max(pred_tensor, 1)
+    pred_tensor = tf.nn.softmax(pred_tensor) # batch_size * 11
+    pred = tf.arg_max(pred_tensor, 1) # (batch_size,)
+    pred = tf.reshape(pred, (batch_size, 1))
     return pred_tensor, pred
 
 def baselineFunc(scope):
@@ -104,8 +105,10 @@ def gaussian_pdf(mean, sample):
     a = -tf.square(sample - mean) / (2.0 * tf.square(loc_sd))
     return Z * tf.exp(a)
 
-def calc_reward(pred_tensor, pred, labels, tensor_labels, p_loc, baseline):
+# def calc_reward(pred_tensor, pred, labels, tensor_labels, p_loc, baseline):
+def calc_reward(labels, pred, tensor_labels, pred_tensor, p_loc, baseline):
 
+    # labels = tf.reshape(labels, (batch_size, 1))
     correct_y = tf.cast(labels, tf.int64)
     R = tf.cast(tf.equal(pred, correct_y), tf.float32) # reward per example
     reward = tf.reduce_mean(R) # overall reward
@@ -141,27 +144,35 @@ for t in range(total_step):
         baselines[(t+1) / glimpses - 1] = baselineFunc("baseline"+str((t+1) / glimpses - 1))
     DO_SHARE = True
 
-output_pred = tf.concat(0, preds)
-output_pred = tf.reshape(output_pred, (batch_size, max_length))
+output_pred = tf.concat(1, preds)
+# output_pred = tf.reshape(output_pred, (batch_size, max_length))
 
 cost = 0.
 reward = 0.
 for i in range(max_length):
 
-    loc = tf.concat(0, sampled_locs[i*glimpses, (i+1)*glimpses])
+    loc = tf.concat(0, sampled_locs[i*glimpses : (i+1)*glimpses])
     loc = tf.reshape(loc, (batch_size, glimpses, 2))
-    m_loc = tf.concat(0, mean_locs[i*glimpses, (i+1)*glimpses])
+    m_loc = tf.concat(0, mean_locs[i*glimpses : (i+1)*glimpses])
     m_loc = tf.reshape(m_loc, (batch_size, glimpses, 2))
 
     p_loc = gaussian_pdf(m_loc, loc) #batch_size * total_step * 2
     p_loc = tf.reshape(p_loc, (batch_size, glimpses * 2))
 
-    cost_, reward_ = calc_reward(pred_tensors[i], preds[i], 
-                                 labels[:,i], tensor_labels[:,i, :], \
+
+    # labels: batch_size, max_length
+    # preds:  batch_size, 1
+    # tensor_labels: batch_size, max_length, n_classes + 1
+    label = tf.reshape(labels[:,i], (batch_size, 1))
+    tensor_label = tf.reshape(tensor_labels[:,i,:], (batch_size, n_classes + 1))
+
+    cost_, reward_ = calc_reward(label, preds[i], \
+                                 tensor_label, pred_tensors[i], \
                                  p_loc, \
                                  baselines[i])
     cost += cost_
     reward += reward_
+
 
 
 

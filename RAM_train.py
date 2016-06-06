@@ -1,5 +1,6 @@
 import tensorflow as tf
 from RAM_model import *
+from RAM_parameters import *
 from utils import *
 import time
 import numpy as np
@@ -27,8 +28,10 @@ img_tensor = (img_tensor - mean) / std
 
 for step in xrange(max_iters):
     start_time = time.time()
-    
-    ind = [int(np.random.rand() * 10), int(np.random.rand() * 10)]
+
+    ind = []
+    for i in range(batch_size):        
+        ind.append(int(np.random.rand() * 10))
 
     feed_dict = {img: img_tensor[ind], labels: img_labels[ind], tensor_labels: img_tensor_labels[ind]}
     fetches = [train_op, output_pred, cost, reward]

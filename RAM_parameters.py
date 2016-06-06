@@ -5,8 +5,8 @@ start_step = 10000
 load_path = None
 # load_path = save_dir + "save.ckpt"
 
-minRadius = 8 # zooms -> minRadius * 2**<depth_level>
-sensorBandwidth =  10# fixed resolution of sensor
+minRadius = 12 # zooms -> minRadius * 2**<depth_level>
+sensorBandwidth =  15# fixed resolution of sensor
 sensorArea = sensorBandwidth**2
 depth = 3 # zooms
 channels = 3 # grayscale
@@ -26,7 +26,7 @@ glimpses = 5
 total_step = max_length * glimpses
 n_classes = 10
 
-lr = 1e-3
+lr = 1e-2
 max_iters = 1000000
 
 width = 160
