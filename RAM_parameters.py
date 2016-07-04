@@ -26,7 +26,7 @@ glimpses = 5
 total_step = max_length * glimpses
 n_classes = 10
 
-lr = 1e-2
+lr = 3e-3
 max_iters = 1000000
 
 width = 160

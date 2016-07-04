@@ -1,10 +1,6 @@
 import tensorflow as tf
 import numpy as np
 
-
-
-
-
 pred_tensor1 = tf.ones((5, 11))
 pred_tensor2 = tf.nn.softmax(pred_tensor1) # batch_size * 11
 pred = tf.arg_max(pred_tensor2, 1) # batch_size * 1

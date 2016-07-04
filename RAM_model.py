@@ -139,7 +139,7 @@ for t in range(total_step):
     mean_locs[t], sampled_locs[t] = sample(output)
     if (t + 1) % glimpses == 0:
         if (t + 1) == glimpses:
-            DO_SHARE = False
+            DO_SHARE = None
         pred_tensors[(t+1) / glimpses - 1], preds[(t+1) / glimpses - 1] = lable_pred(output)  # batch_size * 1
         baselines[(t+1) / glimpses - 1] = baselineFunc("baseline"+str((t+1) / glimpses - 1))
     DO_SHARE = True
